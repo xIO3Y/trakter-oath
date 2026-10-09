@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trakter — Trakt-aanmelding</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 600px;
+            margin: 60px auto;
+            padding: 24px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            font-size: 28px;
+        }
+
+        .panel {
+            background: #f3f3f3;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        button {
+            padding: 10px 16px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        code {
+            overflow-wrap: anywhere;
+        }
+    </style>
+</head>
+<body>
+    <h1>Trakter verbinden met Trakt</h1>
+
+    <div id="result" class="panel">
+        De autorisatie wordt gecontroleerd…
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        const state = params.get("state");
+        const error = params.get("error");
+        const result = document.getElementById("result");
+
+        if (error) {
+            result.textContent =
+                "De Trakt-aanmelding is niet voltooid: " + error;
+        } else if (code && state) {
+            result.replaceChildren();
+
+            const heading = document.createElement("p");
+            heading.textContent =
+                "Trakt heeft een autorisatiecode teruggestuurd.";
+
+            const codeLabel = document.createElement("p");
+            codeLabel.textContent = "Autorisatiecode:";
+
+            const codeValue = document.createElement("code");
+            codeValue.textContent = code;
+
+            const codeButton = document.createElement("button");
+            codeButton.textContent = "Kopieer autorisatiecode";
+            codeButton.addEventListener("click", async () => {
+                await navigator.clipboard.writeText(code);
+                codeButton.textContent = "Gekopieerd";
+            });
+
+            const stateLabel = document.createElement("p");
+            stateLabel.textContent = "Controlegegeven (state):";
+
+            const stateValue = document.createElement("code");
+            stateValue.textContent = state;
+
+            const stateButton = document.createElement("button");
+            stateButton.textContent = "Kopieer state";
+            stateButton.addEventListener("click", async () => {
+                await navigator.clipboard.writeText(state);
+                stateButton.textContent = "Gekopieerd";
+            });
+
+            const warning = document.createElement("p");
+            warning.textContent =
+                "Voer de code en state alleen in je eigen Trakter-app in. " +
+                "De app moet de state controleren en de code met PKCE uitwisselen.";
+
+            result.append(
+                heading,
+                codeLabel,
+                codeValue,
+                document.createElement("br"),
+                codeButton,
+                stateLabel,
+                stateValue,
+                document.createElement("br"),
+                stateButton,
+                warning
+            );
+        } else {
+            result.textContent =
+                "Deze pagina is klaar. Start de aanmelding vanuit Trakter " +
+                "om een autorisatiecode te ontvangen.";
+        }
+    </script>
+</body>
+</html>
