@@ -4,109 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Trakter — Trakt-aanmelding</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            max-width: 600px;
-            margin: 60px auto;
-            padding: 24px;
-            line-height: 1.6;
-        }
-
-        h1 {
-            font-size: 28px;
-        }
-
-        .panel {
-            background: #f3f3f3;
-            padding: 20px;
-            border-radius: 12px;
-            overflow-wrap: anywhere;
-        }
-
-        button {
-            padding: 10px 16px;
-            margin-top: 8px;
-            cursor: pointer;
-        }
-
-        code {
-            overflow-wrap: anywhere;
-        }
-    </style>
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        max-width: 560px;
+        margin: 70px auto;
+        padding: 24px;
+        line-height: 1.6;
+        color: #222;
+        background: #f7f7f7;
+    }
+    main {
+        background: white;
+        padding: 28px;
+        border-radius: 14px;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    }
+    h1 {
+        margin-top: 0;
+    }
+    button {
+        padding: 12px 18px;
+        border: 0;
+        border-radius: 8px;
+        background: #e65353;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    button:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+    #status {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+    .muted {
+        color: #666;
+        font-size: 14px;
+    }
+</style>
 </head>
 <body>
-    <h1>Trakter verbinden met Trakt</h1>
-
-    <div id="result" class="panel">
-        De autorisatie wordt gecontroleerd…
-    </div>
-
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get("code");
-        const state = params.get("state");
-        const error = params.get("error");
-        const result = document.getElementById("result");
-
-        if (error) {
-            result.textContent =
-                "De Trakt-aanmelding is niet voltooid: " + error;
-        } else if (code && state) {
-            result.replaceChildren();
-
-            const heading = document.createElement("p");
-            heading.textContent =
-                "Trakt heeft een autorisatiecode teruggestuurd.";
-
-            const codeLabel = document.createElement("p");
-            codeLabel.textContent = "Autorisatiecode:";
-
-            const codeValue = document.createElement("code");
-            codeValue.textContent = code;
-
-            const codeButton = document.createElement("button");
-            codeButton.textContent = "Kopieer autorisatiecode";
-            codeButton.addEventListener("click", async () => {
-                await navigator.clipboard.writeText(code);
-                codeButton.textContent = "Gekopieerd";
-            });
-
-            const stateLabel = document.createElement("p");
-            stateLabel.textContent = "Controlegegeven (state):";
-
-            const stateValue = document.createElement("code");
-            stateValue.textContent = state;
-
-            const stateButton = document.createElement("button");
-            stateButton.textContent = "Kopieer state";
-            stateButton.addEventListener("click", async () => {
-                await navigator.clipboard.writeText(state);
-                stateButton.textContent = "Gekopieerd";
-            });
-
-            const warning = document.createElement("p");
-            warning.textContent =
-                "Voer de code en state alleen in je eigen Trakter-app in. " +
-                "De app moet de state controleren en de code met PKCE uitwisselen.";
-
-            result.append(
-                heading,
-                codeLabel,
-                codeValue,
-                document.createElement("br"),
-                codeButton,
-                stateLabel,
-                stateValue,
-                document.createElement("br"),
-                stateButton,
-                warning
-            );
-        } else {
-            result.textContent =
-                "Deze pagina is klaar. Start de aanmelding vanuit Trakter " +
-                "om een autorisatiecode te ontvangen.";
+<main>
+    <h1>Trakter</h1>
+<p id="status">De aanmelding wordt gecontroleerd…</p>
+<button id="openApp" hidden>
+    Open Trakter
+</button>
+<p class="muted" id="fallback" hidden>
+    Wordt Trakter niet automatisch geopend? Klik dan op de knop hierboven.
+    Zorg ervoor dat Trakter geopend is op je Mac.
+</p>
+</main>
+<script>
+    const statusElement = document.getElementById("status");
+    const openAppButton = document.getElementById("openApp");
+    const fallbackElement = document.getElementById("fallback");
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+    const error = params.get("error");
+    let appURL = null;
+    function openTrakter() {
+        if (!appURL) {
+            return;
         }
-    </script>
+        window.location.href = appURL;
+    }
+    if (error) {
+        statusElement.textContent =
+            "Trakt heeft de aanmelding niet voltooid.\n\n" +
+            "Melding: " + error +
+            (params.get("error_description")
+                ? "\n" + params.get("error_description")
+                : "");
+    } else if (code && state) {
+        const callbackURL = new URL("trakter://oauth");
+        callbackURL.searchParams.set("code", code);
+        callbackURL.searchParams.set("state", state);
+        appURL = callbackURL.toString();
+        statusElement.textContent =
+            "Aanmelding ontvangen. Trakter wordt geopend…";
+        openAppButton.hidden = false;
+        fallbackElement.hidden = false;
+        openAppButton.addEventListener("click", openTrakter);
+        // Geef de pagina even de tijd om de instructie te tonen.
+        window.setTimeout(openTrakter, 700);
+    } else {
+        statusElement.textContent =
+            "Er is geen volledige autorisatie ontvangen.\n\n" +
+            "Controleer of je de aanmeldprocedure via Trakter hebt gestart. " +
+            "Sluit deze pagina en probeer het opnieuw.";
+    }
+</script>
 </body>
 </html>
